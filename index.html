@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Reto Dubai 100K - Live</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%); color: white; min-height: 100vh; }
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); } 50% { box-shadow: 0 0 40px rgba(6, 182, 212, 0.8); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bob { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-5px); } }
+        .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        .animate-slide-in { animation: slideIn 0.5s ease-out; }
+        .animate-bob { animation: bob 2s ease-in-out infinite; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+        ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.5); border-radius: 4px; }
+        .error-box { background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; border-radius: 12px; padding: 20px; margin: 20px; }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
+            <div style="text-align: center;">
+                <div style="font-size: 48px; margin-bottom: 20px;">⚡</div>
+                <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Cargando El Reto Dubai 100K...</div>
+                <div style="font-size: 14px; color: rgba(6, 182, 212, 0.7);">Conectando con Firebase</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5KzKadpKslPn6cJrZUAxZ3gXTF_GWazE",
+            authDomain: "reto-dubai-100k-10k.firebaseapp.com",
+            databaseURL: "https://reto-dubai-100k-10k-default-rtdb.firebaseio.com",
+            projectId: "reto-dubai-100k-10k",
+            storageBucket: "reto-dubai-100k-10k.firebasestorage.app",
+            messagingSenderId: "460196197011",
+            appId: "1:460196197011:web:aae62f87d6352351e41366"
+        };
+
+        const App = () => {
+            const [error, setError] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [firebaseReady, setFirebaseReady] = useState(false);
+            const [db, setDb] = useState(null);
+
+            useEffect(() => {
+                try {
+                    console.log('🔥 Iniciando Firebase...');
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(firebaseConfig);
+                    }
+                    const database = firebase.database();
+                    setDb(database);
+                    
+                    // Test de conexión
+                    database.ref('.info/connected').on('value', (snap) => {
+                        if (snap.val() === true) {
+                            console.log('✅ Conectado a Firebase');
+                            setFirebaseReady(true);
+                            setLoading(false);
+                        } else {
+                            console.log('❌ Desconectado de Firebase');
+                        }
+                    });
+                } catch (err) {
+                    console.error('❌ Error Firebase:', err);
+                    setError(err.message);
+                    setLoading(false);
+                }
+            }, []);
+
+            if (loading) {
+                return (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚡</div>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>Cargando...</div>
+                            <div style={{ fontSize: '14px', color: 'rgba(6, 182, 212, 0.7)' }}>Conectando con Firebase</div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (error) {
+                return (
+                    <div style={{ maxWidth: '800px', margin: '50px auto', padding: '20px' }}>
+                        <div className="error-box">
+                            <div style={{ fontSize: '48px', textAlign: 'center', marginBottom: '20px' }}>❌</div>
+                            <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px', color: '#ef4444' }}>Error de Firebase</h2>
+                            <p style={{ color: '#fca5a5', marginBottom: '20px' }}>{error}</p>
+                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '8px', fontSize: '12px' }}>
+                                <strong>Posibles soluciones:</strong>
+                                <ol style={{ marginTop: '10px', paddingLeft: '20px' }}>
+                                    <li>Verifica que Realtime Database esté activado en Firebase</li>
+                                    <li>Verifica las reglas de seguridad (deben permitir lectura/escritura)</li>
+                                    <li>Verifica que la databaseURL sea correcta</li>
+                                </ol>
+                            </div>
+                            <button onClick={() => window.location.reload()} style={{ marginTop: '20px', padding: '10px 20px', background: '#06b6d4', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
+                                Reintentar
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!firebaseReady) {
+                return (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔄</div>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>Conectando...</div>
+                            <div style={{ fontSize: '14px', color: 'rgba(6, 182, 212, 0.7)' }}>Esperando conexión con Firebase</div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return <MainApp database={db} />;
+        };
+
+        const MainApp = ({ database }) => {
+            const [data, setData] = useState({
+                totalIngresos: 0,
+                totalGastos: 0,
+                ingresosPorCategoria: { consultoria: 0, realEstate: 0, inversiones: 0 },
+                actualizaciones: [],
+                mensajes: [],
+                currentLocation: 'casa',
+                currentActivity: 'Preparándome para el día',
+                locationChangedAt: new Date().toISOString()
+            });
+            const [visitantes, setVisitantes] = useState(0);
+
+            useEffect(() => {
+                const dataRef = database.ref('retoData');
+                dataRef.on('value', (snapshot) => {
+                    const d = snapshot.val();
+                    if (d) setData(d);
+                });
+
+                const vRef = database.ref('visitantes');
+                vRef.transaction(c => (c || 0) + 1);
+                vRef.on('value', s => setVisitantes(s.val() || 0));
+
+                return () => {
+                    dataRef.off();
+                    vRef.off();
+                };
+            }, [database]);
+
+            const progreso = (data.totalIngresos / 100000) * 100;
+
+            return (
+                <div style={{ minHeight: '100vh' }}>
+                    <div style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(6, 182, 212, 0.3)', padding: '20px', position: 'sticky', top: 0, zIndex: 100 }}>
+                        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                                <h1 style={{ fontSize: '24px', fontWeight: 'bold', background: 'linear-gradient(to right, #06b6d4, #f97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                    ⚡ EL RETO DUBAI 100K
+                                </h1>
+                                <p style={{ fontSize: '12px', color: 'rgba(6, 182, 212, 0.7)' }}>✅ Conectado y sincronizado</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '12px', color: '#9ca3af' }}>Visitantes</div>
+                                <div style={{ fontSize: '20px', color: '#f97316' }}>👁️ {visitantes}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '40px' }}>
+                            <div style={{ background: 'linear-gradient(to bottom right, rgba(6, 182, 212, 0.1), rgba(59, 130, 246, 0.1))', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '14px', color: '#06b6d4', marginBottom: '8px' }}>💰 Ganado</div>
+                                <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#06b6d4' }}>{data.totalIngresos.toLocaleString()}€</div>
+                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '8px' }}>{progreso.toFixed(1)}% de 100K</div>
+                            </div>
+
+                            <div style={{ background: 'linear-gradient(to bottom right, rgba(249, 115, 22, 0.1), rgba(239, 68, 68, 0.1))', border: '1px solid rgba(249, 115, 22, 0.3)', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '14px', color: '#f97316', marginBottom: '8px' }}>💸 Presupuesto</div>
+                                <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f97316' }}>{(10000 - data.totalGastos).toLocaleString()}€</div>
+                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '8px' }}>Restante</div>
+                            </div>
+
+                            <div style={{ background: 'linear-gradient(to bottom right, rgba(251, 191, 36, 0.1), rgba(249, 115, 22, 0.1))', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '14px', color: '#fbbf24', marginBottom: '8px' }}>🏆 Logros</div>
+                                <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#fbbf24' }}>
+                                    {data.totalIngresos >= 75000 ? '3' : data.totalIngresos >= 50000 ? '2' : data.totalIngresos >= 25000 ? '1' : '0'}/3
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '8px' }}>Desbloqueados</div>
+                            </div>
+                        </div>
+
+                        <div style={{ background: 'linear-gradient(to right, rgba(6, 182, 212, 0.1), rgba(59, 130, 246, 0.1))', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '15px', padding: '30px', marginBottom: '40px' }}>
+                            <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#06b6d4', marginBottom: '20px' }}>📊 Progreso hacia los 100K</h3>
+                            <div style={{ height: '32px', background: 'rgba(0, 0, 0, 0.5)', borderRadius: '20px', border: '1px solid rgba(6, 182, 212, 0.3)', overflow: 'hidden', position: 'relative' }}>
+                                <div style={{ height: '100%', background: 'linear-gradient(to right, #06b6d4, #3b82f6)', width: `${Math.min(progreso, 100)}%`, transition: 'width 1s ease' }} />
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                                    {progreso.toFixed(1)}% completado
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#6b7280' }}>
+                            <div style={{ fontSize: '64px', marginBottom: '20px' }}>🚀</div>
+                            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '10px' }}>¡Firebase Funciona!</h2>
+                            <p style={{ fontSize: '18px', marginBottom: '20px' }}>La aplicación se está cargando correctamente</p>
+                            <div style={{ background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '12px', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+                                <p style={{ fontSize: '14px', color: '#06b6d4', marginBottom: '10px' }}><strong>✅ Estado:</strong> Conectado y sincronizado</p>
+                                <p style={{ fontSize: '14px', color: '#06b6d4', marginBottom: '10px' }}><strong>💰 Ingresos:</strong> {data.totalIngresos.toLocaleString()}€</p>
+                                <p style={{ fontSize: '14px', color: '#06b6d4', marginBottom: '10px' }}><strong>📍 Ubicación:</strong> {data.currentLocation}</p>
+                                <p style={{ fontSize: '14px', color: '#06b6d4' }}><strong>👁️ Visitantes:</strong> {visitantes}</p>
+                            </div>
+                            <p style={{ fontSize: '14px', marginTop: '30px', color: '#9ca3af' }}>
+                                Si ves este mensaje, Firebase está funcionando perfectamente. 
+                                <br/>Ahora puedes reemplazar este código con la versión completa.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
