@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Reto Dubai 100K</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+body{font-family:'Inter',sans-serif;margin:0;padding:0}
+@keyframes p{0%,100%{box-shadow:0 0 20px rgba(6,182,212,0.4)}50%{box-shadow:0 0 40px rgba(6,182,212,0.8)}}
+@keyframes s{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes b{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.ap{animation:p 2s infinite}.as{animation:s 0.5s ease-out}.ab{animation:b 2s infinite}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:rgba(0,0,0,0.3)}::-webkit-scrollbar-thumb{background:rgba(6,182,212,0.5);border-radius:4px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect}=React;
+
+if(!firebase.apps.length)firebase.initializeApp({
+apiKey:"AIzaSyB5KzKadpKslPn6cJrZUAxZ3gXTF_GWazE",
+authDomain:"reto-dubai-100k-10k.firebaseapp.com",
+databaseURL:"https://reto-dubai-100k-10k-default-rtdb.firebaseio.com",
+projectId:"reto-dubai-100k-10k",
+storageBucket:"reto-dubai-100k-10k.firebasestorage.app",
+messagingSenderId:"460196197011",
+appId:"1:460196197011:web:aae62f87d6352351e41366"
+});
+const db=firebase.database();
+
+const L={
+oficina:{id:'oficina',n:'🏢 Oficina',c:'from-blue-500 to-cyan-500',a:'Trabajando'},
+gimnasio:{id:'gimnasio',n:'💪 Gimnasio',c:'from-orange-500 to-red-500',a:'Entrenando'},
+casa:{id:'casa',n:'🏠 Casa',c:'from-purple-500 to-pink-500',a:'Descansando'},
+reunion:{id:'reunion',n:'🤝 Reunión',c:'from-green-500 to-emerald-500',a:'Reunión'},
+mall:{id:'mall',n:'🏙️ Mall',c:'from-yellow-500 to-orange-500',a:'Networking'},
+aeropuerto:{id:'aeropuerto',n:'✈️ Aeropuerto',c:'from-sky-500 to-blue-500',a:'Viajando'},
+restaurante:{id:'restaurante',n:'🍽️ Restaurante',c:'from-amber-500 to-orange-500',a:'Comida'}
+};
+
+const Svg=({t})=>(
+<svg viewBox="0 0 400 300" className="w-full max-w-lg mx-auto">
+<polygon points="200,250 100,200 200,150 300,200" fill="#3b4252"/>
+{t===1&&<><polygon points="180,180 220,180 230,190 170,190" fill="#5e81ac"/><rect x="190" y="165" width="20" height="15" fill="#2e3440"/><circle cx="200" cy="195" r="8" fill="#f97316" className="ab"/><ellipse cx="200" cy="205" rx="10" ry="5" fill="#3b82f6" className="ab"/></>}
+{t===2&&<><circle cx="200" cy="182" r="9" fill="#f97316" className="ab"/><ellipse cx="200" cy="193" rx="11" ry="6" fill="#3b82f6" className="ab"/><rect x="175" y="175" width="50" height="8" fill="#434c5e"/></>}
+{t===3&&<><polygon points="160,190 240,190 250,200 150,200" fill="#5e81ac"/><ellipse cx="180" cy="195" rx="15" ry="8" fill="#d8dee9"/><circle cx="190" cy="190" r="8" fill="#f97316"/><ellipse cx="190" cy="200" rx="10" ry="6" fill="#3b82f6"/></>}
+</svg>
+);
+
+const App=()=>{
+const[d,sD]=useState({totalIngresos:0,totalGastos:0,ingresosPorCategoria:{consultoria:0,realEstate:0,inversiones:0},actualizaciones:[],mensajes:[],currentLocation:'casa',currentActivity:'Iniciando',locationChangedAt:new Date().toISOString()});
+const[v,sV]=useState(0);
+const[ad,sAd]=useState(false);
+const[au,sAu]=useState(false);
+const[p,sP]=useState('');
+const[lg,sLg]=useState(false);
+const[m,sM]=useState('');
+const[ed,sEd]=useState(null);
+const[aF,sAF]=useState({location:'oficina',activity:''});
+const[fF,sFF]=useState({categoria:'consultoria',monto:'',tipo:'ingreso',nota:''});
+
+useEffect(()=>{
+const r=db.ref('retoData');
+r.on('value',s=>{const dt=s.val();if(dt)sD(dt);});
+const vR=db.ref('visitantes');
+vR.transaction(c=>(c||0)+1);
+vR.on('value',s=>sV(s.val()||0));
+return()=>{r.off();vR.off();};
+},[]);
+
+const upd=u=>db.ref('retoData').set({...d,...u});
+
+const lgA=[];
+if(d.totalIngresos>=25000)lgA.push('25k');
+if(d.totalIngresos>=50000)lgA.push('50k');
+if(d.totalIngresos>=75000)lgA.push('75k');
+
+const pr=(d.totalIngresos/100000)*100;
+const bg=10000-d.totalGastos;
+const prB=(bg/10000)*100;
+
+const gT=()=>{
+const ms=new Date()-new Date(d.locationChangedAt);
+const mn=Math.floor(ms/60000);
+const h=Math.floor(mn/60);
+return h>0?`${h}h ${mn%60}m`:`${mn}m`;
+};
+
+const gD=()=>Math.floor((new Date()-new Date('2025-11-01T00:00:00+04:00'))/86400000);
+
+const hL=e=>{e.preventDefault();p==='Dubai2025!'?sAu(true):alert('Incorrecto');};
+
+const hA=e=>{
+e.preventDefault();
+const loc=L[aF.location];
+upd({currentLocation:aF.location,currentActivity:aF.activity.trim()||loc.a,locationChangedAt:new Date().toISOString()});
+sAF({location:'oficina',activity:''});
+alert('✅');
+};
+
+const hF=e=>{
+e.preventDefault();
+const mo=parseFloat(fF.monto);
+if(isNaN(mo)||mo<=0)return alert('Inválido');
+const ac={id:Date.now(),fecha:new Date().toISOString(),categoria:fF.categoria,monto:mo,tipo:fF.tipo,nota:fF.nota};
+let ti=d.totalIngresos,tg=d.totalGastos,ipc={...d.ingresosPorCategoria};
+if(fF.tipo==='ingreso'){ti+=mo;ipc[fF.categoria]=(ipc[fF.categoria]||0)+mo;}else{tg+=mo;}
+upd({totalIngresos:ti,totalGastos:tg,ingresosPorCategoria:ipc,actualizaciones:[ac,...d.actualizaciones]});
+sFF({categoria:'consultoria',monto:'',tipo:'ingreso',nota:''});
+alert('✅');
+};
+
+const hD=id=>{
+if(!confirm('¿Eliminar?'))return;
+const mv=d.actualizaciones.find(a=>a.id===id);
+if(!mv)return;
+let ti=d.totalIngresos,tg=d.totalGastos,ipc={...d.ingresosPorCategoria};
+if(mv.tipo==='ingreso'){ti-=mv.monto;ipc[mv.categoria]=(ipc[mv.categoria]||0)-mv.monto;}else{tg-=mv.monto;}
+upd({totalIngresos:ti,totalGastos:tg,ingresosPorCategoria:ipc,actualizaciones:d.actualizaciones.filter(a=>a.id!==id)});
+};
+
+const hE=mv=>{
+sEd(mv);
+sFF({categoria:mv.categoria||'consultoria',monto:mv.monto.toString(),tipo:mv.tipo,nota:mv.nota||''});
+};
+
+const hSE=e=>{
+e.preventDefault();
+if(!ed)return;
+const mo=parseFloat(fF.monto);
+if(isNaN(mo)||mo<=0)return alert('Inválido');
+let ti=d.totalIngresos,tg=d.totalGastos,ipc={...d.ingresosPorCategoria};
+if(ed.tipo==='ingreso'){ti-=ed.monto;ipc[ed.categoria]=(ipc[ed.categoria]||0)-ed.monto;}else{tg-=ed.monto;}
+if(fF.tipo==='ingreso'){ti+=mo;ipc[fF.categoria]=(ipc[fF.categoria]||0)+mo;}else{tg+=mo;}
+const acs=d.actualizaciones.map(a=>a.id===ed.id?{...a,monto:mo,categoria:fF.categoria,tipo:fF.tipo,nota:fF.nota}:a);
+upd({totalIngresos:ti,totalGastos:tg,ingresosPorCategoria:ipc,actualizaciones:acs});
+sEd(null);
+sFF({categoria:'consultoria',monto:'',tipo:'ingreso',nota:''});
+alert('✅');
+};
+
+const hM=e=>{
+e.preventDefault();
+if(m.trim().length<3)return alert('Muy corto');
+upd({mensajes:[{id:Date.now(),texto:m,fecha:new Date().toISOString(),usuario:'Anónimo'},...d.mensajes].slice(0,50)});
+sM('');
+};
+
+const getSvg=()=>{
+switch(d.currentLocation){
+case 'oficina':return 1;
+case 'gimnasio':return 2;
+case 'casa':return 3;
+default:return 1;
+}
+};
+
+const loc=L[d.currentLocation]||L.casa;
+
+return(
+<div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+<div className="bg-black/50 backdrop-blur-md border-b border-cyan-500/30 p-4 sticky top-0 z-50">
+<div className="max-w-6xl mx-auto flex justify-between items-center">
+<div>
+<h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-orange-500 bg-clip-text text-transparent">⚡ EL RETO DUBAI 100K</h1>
+<p className="text-xs text-cyan-400/70">🔥 Tiempo real</p>
+</div>
+<div className="flex items-center gap-4">
+<div className="text-right">
+<div className="text-xs text-gray-400">Día #{gD()}</div>
+<div className="text-xs text-orange-400">👁️ {v}</div>
+</div>
+<button onClick={()=>sAd(!ad)} className="text-2xl">🔒</button>
+</div>
+</div>
+</div>
+
+<div className="max-w-6xl mx-auto px-4 py-6">
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+<div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 text-center">
+<div className="text-sm text-cyan-400">💰 Ganado</div>
+<div className="text-2xl font-bold text-cyan-400">{d.totalIngresos.toLocaleString()}€</div>
+<div className="text-xs text-gray-400">{pr.toFixed(1)}%</div>
+</div>
+<div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 text-center">
+<div className="text-sm text-orange-400">💸 Quedan</div>
+<div className="text-2xl font-bold text-orange-400">{bg.toLocaleString()}€</div>
+<div className="text-xs text-gray-400">{prB.toFixed(0)}%</div>
+</div>
+<div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 text-center cursor-pointer" onClick={()=>sLg(!lg)}>
+<div className="text-sm text-yellow-400">🏆 Logros</div>
+<div className="text-2xl font-bold text-yellow-400">{lgA.length}/3</div>
+</div>
+</div>
+
+{lg&&(
+<div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6 mb-6 as">
+<h3 className="text-lg font-bold text-yellow-400 mb-4">🏆 Logros</h3>
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div className={`p-4 rounded-lg ${lgA.includes('25k')?'bg-yellow-500/20':'bg-black/30'}`}>
+<div className="text-3xl">{lgA.includes('25k')?'🏆':'🔒'}</div>
+<div className="font-bold">25.000€</div>
+<div className="text-xs text-gray-400">{lgA.includes('25k')?'¡Desbloqueado!':`Faltan ${(25000-d.totalIngresos).toLocaleString()}€`}</div>
+</div>
+<div className={`p-4 rounded-lg ${lgA.includes('50k')?'bg-cyan-500/20':'bg-black/30'}`}>
+<div className="text-3xl">{lgA.includes('50k')?'💎':'🔒'}</div>
+<div className="font-bold">50.000€</div>
+<div className="text-xs text-gray-400">{lgA.includes('50k')?'¡Desbloqueado!':d.totalIngresos>=25000?`Faltan ${(50000-d.totalIngresos).toLocaleString()}€`:'Desbloquea 25K'}</div>
+</div>
+<div className={`p-4 rounded-lg ${lgA.includes('75k')?'bg-purple-500/20':'bg-black/30'}`}>
+<div className="text-3xl">{lgA.includes('75k')?'👑':'🔒'}</div>
+<div className="font-bold">75.000€</div>
+<div className="text-xs text-gray-400">{lgA.includes('75k')?'¡Desbloqueado!':d.totalIngresos>=50000?`Faltan ${(75000-d.totalIngresos).toLocaleString()}€`:'Desbloquea 50K'}</div>
+</div>
+</div>
+</div>
+)}
+
+<div className="mb-6">
+<div className="mb-4">
+<div className="flex justify-between mb-2">
+<span className="text-sm font-semibold text-cyan-400">META: 100.000€</span>
+<span className="text-xl font-bold text-cyan-400">{d.totalIngresos.toLocaleString()}€</span>
+</div>
+<div className="h-8 bg-black/50 rounded-full border border-cyan-500/30 overflow-hidden relative">
+<div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-1000" style={{width:`${Math.min(pr,100)}%`}}/>
+<div className="absolute inset-0 flex items-center justify-center text-xs font-bold">{pr.toFixed(1)}% completado</div>
+</div>
+</div>
+<div>
+<div className="flex justify-between mb-2">
+<span className="text-sm font-semibold text-orange-400">PRESUPUESTO</span>
+<span className={`text-xl font-bold ${bg<3000?'text-red-500':'text-orange-400'}`}>{bg.toLocaleString()}€</span>
+</div>
+<div className="h-6 bg-black/50 rounded-full border border-orange-500/30 overflow-hidden relative">
+<div className={`h-full transition-all duration-1000 ${bg<3000?'bg-red-600':'bg-orange-600'}`} style={{width:`${Math.max(prB,0)}%`}}/>
+<div className="absolute inset-0 flex items-center justify-center text-xs font-bold">{Math.max(prB,0).toFixed(0)}%</div>
+</div>
+</div>
+</div>
+
+<div className={`bg-gradient-to-br ${loc.c} p-1 rounded-xl mb-6 ap`}>
+<div className="bg-slate-900/90 rounded-lg p-6">
+<div className="flex justify-between items-center mb-4">
+<div>
+<div className="text-sm text-gray-400">📍 Ahora en:</div>
+<div className="text-3xl font-bold">{loc.n}</div>
+</div>
+<div className="text-right">
+<div className="text-sm text-gray-400">⏱️ Hace</div>
+<div className="text-2xl font-bold text-cyan-400">{gT()}</div>
+</div>
+</div>
+<div className="bg-black/30 rounded-lg p-3">
+<div className="text-sm text-gray-400">💬 Actividad:</div>
+<div className="text-lg font-semibold">{d.currentActivity}</div>
+</div>
+</div>
+</div>
+
+<div className="bg-slate-800/50 border-2 border-cyan-500/30 rounded-xl p-6 mb-6">
+<div className="min-h-[300px] flex items-center justify-center">
+<Svg t={getSvg()}/>
+</div>
+</div>
+
+<div className="grid md:grid-cols-2 gap-6 mb-6">
+<div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-6">
+<h3 className="text-lg font-bold text-cyan-400 mb-4">📊 Últimas Actualizaciones</h3>
+<div className="space-y-3 max-h-96 overflow-y-auto">
+{d.actualizaciones.length===0?(
+<p className="text-center text-gray-500 py-8">Sin actualizaciones</p>
+):(
+d.actualizaciones.slice(0,10).map(ac=>(
+<div key={ac.id} className="bg-black/30 rounded-lg p-3 border border-cyan-500/20">
+<div className="flex justify-between items-start mb-1">
+<span className={`font-bold ${ac.tipo==='ingreso'?'text-green-400':'text-red-400'}`}>
+{ac.tipo==='ingreso'?'+':'-'}{ac.monto.toLocaleString()}€
+</span>
+<div className="flex gap-2 items-center">
+<span className="text-xs text-gray-500">
+{new Date(ac.fecha).toLocaleDateString('es-ES',{day:'numeric',month:'short'})}
+</span>
+{au&&(
+<>
+<button onClick={()=>hE(ac)} className="text-xs text-blue-400">✏️</button>
+<button onClick={()=>hD(ac.id)} className="text-xs text-red-400">🗑️</button>
+</>
+)}
+</div>
+</div>
+<div className="text-xs text-gray-400">
+{ac.categoria==='consultoria'?'💼 Consultorías':
+ac.categoria==='realEstate'?'🏢 Real Estate':
+ac.categoria==='inversiones'?'📊 Inversiones':'💸 Gastos'}
+</div>
+{ac.nota&&<div className="text-xs text-gray-300 mt-1">{ac.nota}</div>}
+</div>
+))
+)}
+</div>
+</div>
+
+<div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6">
+<h3 className="text-lg font-bold text-green-400 mb-4">💰 Fuentes de Ingresos</h3>
+<div className="space-y-4">
+<div className="p-3 bg-black/30 rounded-lg">
+<div className="flex justify-between items-center mb-1">
+<span>💼 Consultorías</span>
+<span className="font-bold text-cyan-400">{(d.ingresosPorCategoria.consultoria||0).toLocaleString()}€</span>
+</div>
+<div className="text-xs text-cyan-400">bsbcapital.io</div>
+</div>
+<div className="p-3 bg-black/30 rounded-lg">
+<div className="flex justify-between items-center mb-1">
+<span>🏢 Real Estate</span>
+<span className="font-bold text-blue-400">{(d.ingresosPorCategoria.realEstate||0).toLocaleString()}€</span>
+</div>
+<div className="text-xs text-blue-400">marcos@eminenceuae.com</div>
+</div>
+<div className="p-3 bg-black/30 rounded-lg">
+<div className="flex justify-between items-center">
+<span>📊 Inversiones</span>
+<span className={`font-bold ${(d.ingresosPorCategoria.inversiones||0)>=0?'text-green-400':'text-red-400'}`}>
+{(d.ingresosPorCategoria.inversiones||0)>0?'+':''}{(d.ingresosPorCategoria.inversiones||0).toLocaleString()}€
+</span>
+</div>
+</div>
+<div className="border-t border-green-500/20 pt-4">
+<div className="flex justify-between items-center p-3 bg-green-500/10 rounded-lg">
+<span className="font-bold text-green-400">TOTAL</span>
+<span className="font-bold text-green-400 text-xl">{d.totalIngresos.toLocaleString()}€</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-6 mb-6">
+<h3 className="text-lg font-bold text-purple-400 mb-4">💬 Mensajes ({d.mensajes.length})</h3>
+<form onSubmit={hM} className="mb-4">
+<div className="flex gap-2">
+<input type="text" value={m} onChange={e=>sM(e.target.value)} placeholder="Mensaje... 💪" maxLength={150} className="flex-1 bg-black/50 border border-purple-500/30 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-400"/>
+<button type="submit" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 px-4 py-2 rounded font-semibold text-sm">Enviar</button>
+</div>
+</form>
+<div className="space-y-2 max-h-64 overflow-y-auto">
+{d.mensajes.length===0?(
+<p className="text-center text-gray-500 py-8">Sé el primero 💬</p>
+):(
+d.mensajes.slice(0,10).map(ms=>(
+<div key={ms.id} className="bg-black/30 rounded-lg p-3 border border-purple-500/20">
+<div className="flex justify-between items-start mb-1">
+<span className="text-xs font-semibold text-purple-400">{ms.usuario}</span>
+<span className="text-xs text-gray-500">{new Date(ms.fecha).toLocaleDateString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+</div>
+<p className="text-sm text-gray-300">{ms.texto}</p>
+</div>
+))
+)}
+</div>
+</div>
+
+<div className="text-center text-xs text-gray-500">
+<p>El Reto Dubai 100K</p>
+<p className="text-cyan-400 font-semibold">✅ Sincronizado con Firebase</p>
+</div>
+</div>
+
+{ad&&(
+<div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+<div className="bg-slate-900 border-2 border-cyan-500/50 rounded-xl max-w-2xl w-full my-8">
+<div className="p-6 max-h-[90vh] overflow-y-auto">
+<div className="flex justify-between mb-6">
+<h2 className="text-xl font-bold text-cyan-400">🎮 Admin</h2>
+<button onClick={()=>{sAd(false);sAu(false);sP('');sEd(null);}} className="text-2xl">✕</button>
+</div>
+
+{!au?(
+<form onSubmit={hL} className="space-y-4">
+<input type="password" value={p} onChange={e=>sP(e.target.value)} className="w-full bg-black/50 border border-cyan-500/30 rounded px-3 py-2 text-white" placeholder="Contraseña"/>
+<button type="submit" className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-3 rounded-lg font-semibold">Entrar</button>
+</form>
+):(
+<div className="space-y-6">
+<div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+<h3 className="font-bold text-purple-400 mb-4">📍 Ubicación</h3>
+<form onSubmit={hA} className="space-y-4">
+<select value={aF.location} onChange={e=>sAF({...aF,location:e.target.value})} className="w-full bg-black/50 border border-purple-500/30 rounded px-3 py-2 text-white">
+{Object.values(L).map(l=><option key={l.id} value={l.id}>{l.n}</option>)}
+</select>
+<input type="text" value={aF.activity} onChange={e=>sAF({...aF,activity:e.target.value})} className="w-full bg-black/50 border border-purple-500/30 rounded px-3 py-2 text-white" placeholder="Actividad..." maxLength={100}/>
+<button type="submit" className="w-full bg-purple-500 px-4 py-2 rounded font-semibold">Actualizar</button>
+</form>
+</div>
+
+<div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+<h3 className="font-bold text-green-400 mb-4">{ed?'✏️ Editar':'💰 Nuevo'}</h3>
+<form onSubmit={ed?hSE:hF} className="space-y-4">
+<select value={fF.tipo} onChange={e=>sFF({...fF,tipo:e.target.value})} className="w-full bg-black/50 border border-green-500/30 rounded px-3 py-2 text-white">
+<option value="ingreso">💰 Ingreso</option>
+<option value="gasto">💸 Gasto</option>
+</select>
+{fF.tipo==='ingreso'&&(
+<select value={fF.categoria} onChange={e=>sFF({...fF,categoria:e.target.value})} className="w-full bg-black/50 border border-green-500/30 rounded px-3 py-2 text-white">
+<option value="consultoria">💼 Consultorías (bsbcapital.io)</option>
+<option value="realEstate">🏢 Real Estate (marcos@eminenceuae.com)</option>
+<option value="inversiones">📊 Inversiones</option>
+</select>
+)}
+<input type="number" value={fF.monto} onChange={e=>sFF({...fF,monto:e.target.value})} className="w-full bg-black/50 border border-green-500/30 rounded px-3 py-2 text-white" placeholder="Monto €" step="0.01" required/>
+<textarea value={fF.nota} onChange={e=>sFF({...fF,nota:e.target.value})} className="w-full bg-black/50 border border-green-500/30 rounded px-3 py-2 text-white" placeholder="Nota..." rows="2" maxLength={200}/>
+<div className="flex gap-2">
+<button type="submit" className="flex-1 bg-green-500 px-4 py-3 rounded-lg font-semibold">{ed?'Guardar':'Agregar'}</button>
+{ed&&<button type="button" onClick={()=>{sEd(null);sFF({categoria:'consultoria',monto:'',tipo:'ingreso',nota:''});}} className="px-4 py-3 bg-gray-600 rounded-lg font-semibold">Cancelar</button>}
+</div>
+</form>
+</div>
+
+<div className="bg-black/30 border border-cyan-500/30 rounded-lg p-4">
+<h3 className="text-sm font-semibold text-cyan-400 mb-2">📊 Resumen</h3>
+<div className="grid grid-cols-2 gap-2 text-sm">
+<div>Ingresos:</div><div className="text-green-400 font-semibold text-right">{d.totalIngresos.toLocaleString()}€</div>
+<div>Gastos:</div><div className="text-red-400 font-semibold text-right">{d.totalGastos.toLocaleString()}€</div>
+<div>Logros:</div><div className="text-yellow-400 font-semibold text-right">{lgA.length}/3 🏆</div>
+<div>Visitantes:</div><div className="text-cyan-400 font-semibold text-right">{v}</div>
+</div>
+</div>
+</div>
+)}
+</div>
+</div>
+)}
+</div>
+);
+};
+
+ReactDOM.render(<App/>,document.getElementById('root'));
+</script>
+</body>
+</html>
